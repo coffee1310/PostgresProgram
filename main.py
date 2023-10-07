@@ -44,7 +44,8 @@ def main(page: ft.Page):
     )
 
     def search_btn(e):
-        pass
+        search_db(db_name=txt_field.value, lv=lv)
+        page.update()
 
 
     def create_db(e):
@@ -67,8 +68,6 @@ def main(page: ft.Page):
             stopwatch_thread = threading.Thread(target=stopwatch, args=(page, error_txt, 3))
             stopwatch_thread.start()
 
-    def delete_db(e:ft.TapEvent):
-        pass
 
     page.add(
         ft.Row(
@@ -86,7 +85,16 @@ def main(page: ft.Page):
     DataBase.lv = lv
     page.add(txt_title)
 
+    if len(lv.controls) == 0:
+        message = ft.Row(
+            [
+                ft.Text("You haven't created any database yet", weight=ft.FontWeight.W_700, size=20,)
+            ],
+            alignment=ft.MainAxisAlignment.CENTER)
+        page.add(message)
+        DataBaseControl.message = message
+
     page.add(lv)
 
 
-ft.app(target=main, view=ft.WEB_BROWSER)
+ft.app(target=main, view=ft.FLET_APP)

@@ -4,6 +4,10 @@ import time
 import flet as ft
 import psycopg2
 import configparser
+import threading
+
+from flet_core import Row
+
 from config import *
 
 def stopwatch(page,elem, sec):
@@ -92,7 +96,9 @@ class DataBase():
         print("Database name has been deleted!")
 
 class DataBaseControl(DataBase, ft.UserControl):
-    def __init__(self, db_name, page:ft.page=None):
+    message = None
+
+    def __init__(self, db_name):
         ft.UserControl.__init__(self)
         self.db_name = db_name
         self.data_base_row = ft.Row(
@@ -116,16 +122,29 @@ class DataBaseControl(DataBase, ft.UserControl):
         self.remove_DB_name()
 
         if self.page:
+            print(self.page.controls)
+            self.check_DB()
             if self.lv:
                 self.lv.controls.remove(self)
-                print(self.lv.controls)
             self.page.update()
-
     def create_DB_control(self):
-        if self.lv:
-            self.lv.controls.append(self)
+        if self.lv and  self.db_name not in get_data_base():
+            self.lv.controls.insert(0, self)
             self.create_DB()
             self.page.update()
+            self.check_DB()
+    def check_DB(self):
+        if len(self.lv.controls) == 0:
+            self.message = ft.Row(
+                [
+                    ft.Text("You haven't created any database yet", weight=ft.FontWeight.W_700, size=20,)
+                ],
+                alignment=ft.MainAxisAlignment.CENTER)
+            self.page.add(self.message)
+        else:
+            if self.message in self.page.controls:
+                self.page.controls.remove(self.message)
+
 
     def build(self):
         return self.data_base_row
@@ -133,7 +152,17 @@ class DataBaseControl(DataBase, ft.UserControl):
 def add_lv_on_page(lv: ft.ListView, page:ft.Page):
     data_bases = get_data_base()
     for db_name in data_bases:
-        lv_elem = DataBaseControl(db_name, page)
+        lv_elem = DataBaseControl(db_name)
         lv.controls.append(lv_elem)
         DataBaseControl.lv = lv
     return lv
+
+
+def search_db(db_name, lv:ft.ListView):
+    config = configparser.ConfigParser()
+    config.read("db_config.ini")
+    lv.controls.clear()
+    if config.has_section(db_name):
+        lv.controls.append(DataBaseControl(db_name))
+    else:
+        pass
