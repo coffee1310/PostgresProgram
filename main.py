@@ -9,6 +9,7 @@ def main(page: ft.Page):
     page.vertical_aligment = ft.MainAxisAlignment.CENTER
     txt_field = ft.TextField(value="", text_align=ft.TextAlign.LEFT, width=400, autofocus=True)
 
+
     lv = ft.ListView(expand=True, spacing=10)
     DataBase.page = page
 
@@ -34,13 +35,50 @@ def main(page: ft.Page):
 
         page.update()
 
-    page.navigation_bar = ft.NavigationBar(
-        destinations=[
-            ft.NavigationRailDestination(icon=ft.icons.DATA_ARRAY,label="Data Bases",),
-            ft.NavigationRailDestination(icon=ft.icons.SETTINGS, label="Settings")
-        ],
-        selected_index=0,
-        on_change=select_option
+    # page.navigation_bar = ft.NavigationBar(
+    #     destinations=[
+    #         ft.NavigationRailDestination(icon=ft.icons.DATA_ARRAY,label="Data Bases",),
+    #         ft.NavigationRailDestination(icon=ft.icons.SETTINGS, label="Settings")
+    #     ],
+    #     selected_index=0,
+    #     on_change=select_option
+    # )
+
+    # rail = ft.NavigationRail(
+    #     selected_index=0,
+    #     destinations=[
+    #         ft.NavigationRailDestination(icon=ft.icons.DATA_ARRAY, label="Data Bases", ),
+    #         ft.NavigationRailDestination(icon=ft.icons.SETTINGS, label="Settings")
+    #     ],
+    #     on_change=select_option,
+    #     height=page.window_height
+    # )
+
+    rail = ft.Container(
+        content=ft.Column(
+            controls=[
+                ft.Container(
+                    content=ft.IconButton(ft.icons.DATA_ARRAY),
+                    animate=ft.animation.Animation(1000,'bounceOut')
+                ),
+                ft.Container(
+                    content=ft.IconButton(ft.icons.SETTINGS)
+                ),
+                ft.Container(
+                    content=ft.IconButton(ft.icons.COLOR_LENS)
+                ),
+                ft.Container(
+                    content=ft.IconButton(ft.icons.INFO)
+                ),
+                ft.Container(
+                    content=ft.IconButton(ft.icons.CLOSE),
+                    alignment=ft.alignment.bottom_left
+                )
+            ]
+        ),
+        width=page.window_width,
+        height=page.window_height,
+        margin=ft.margin.only(top=20),
     )
 
     def search_btn(e):
@@ -70,20 +108,31 @@ def main(page: ft.Page):
 
 
     page.add(
-        ft.Row(
-            [
-                txt_field,
-                ft.IconButton(ft.icons.ADD, on_click=create_db),
-                ft.IconButton(ft.icons.SEARCH, on_click=search_btn)
-            ],
-            alignment=ft.MainAxisAlignment.CENTER,
-
+            ft.Stack([
+                rail,
+                ft.Container(
+                    margin=ft.margin.only(top=50, left=60),
+                    content=(
+                        ft.Row(
+                            [
+                                txt_field,
+                                ft.IconButton(ft.icons.ADD, on_click=create_db),
+                                ft.IconButton(ft.icons.SEARCH, on_click=search_btn)
+                            ],
+                            alignment=ft.MainAxisAlignment.CENTER))
+                    ),
+                ]
+            )
         )
-    )
 
     lv = add_lv_on_page(lv, page=page)
     DataBase.lv = lv
-    page.add(txt_title)
+    page.add(ft.Container(
+        margin=ft.margin.only(
+            top=20
+        ),
+        content=txt_title
+    ))
 
     if len(lv.controls) == 0:
         message = ft.Row(
