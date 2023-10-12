@@ -88,7 +88,6 @@ class DataBase():
         config_.read("db_config.ini")
         config_.remove_section(self.db_name)
 
-
         with open('db_config.ini', 'w+') as configfile:
             config_.write(configfile)
             configfile.flush()
@@ -120,19 +119,19 @@ class DataBaseControl(DataBase, ft.UserControl):
         conn.close()
 
         self.remove_DB_name()
-
+    
         if self.page:
-            print(self.page.controls)
             self.check_DB()
-            if self.lv:
-                self.lv.controls.remove(self)
             self.page.update()
     def create_DB_control(self):
-        if self.lv and  self.db_name not in get_data_base():
+        if self.lv and self.db_name not in get_data_base():
             self.lv.controls.insert(0, self)
             self.create_DB()
-            self.page.update()
             self.check_DB()
+            self.page.update()
+            print(3)
+            print(self.page)
+
     def check_DB(self):
         if len(self.lv.controls) == 0:
             self.message = ft.Row(
@@ -141,10 +140,9 @@ class DataBaseControl(DataBase, ft.UserControl):
                 ],
                 alignment=ft.MainAxisAlignment.CENTER)
             self.page.add(self.message)
+            self.page.update()
         else:
-            if self.message in self.page.controls:
-                self.page.controls.remove(self.message)
-
+            pass
 
     def build(self):
         return self.data_base_row

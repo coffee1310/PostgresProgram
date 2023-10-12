@@ -2,8 +2,6 @@ import threading
 import flet as ft
 from utils import *
 
-
-
 def main(page: ft.Page):
     page.title = "Программа для работы с PostgreSQL"
     page.vertical_aligment = ft.MainAxisAlignment.CENTER
@@ -11,7 +9,6 @@ def main(page: ft.Page):
 
 
     lv = ft.ListView(expand=True, spacing=10)
-    DataBase.page = page
 
     txt_title = ft.Row(
         [
@@ -20,45 +17,30 @@ def main(page: ft.Page):
         alignment=ft.MainAxisAlignment.CENTER,
     )
 
-    def select_option(e):
-        sel_index = e.control.selected_index
-        if sel_index == 0:
-            page.add(txt_title)
-            page.add(lv)
-            page.update()
+    # def select_option(e):
+    #     sel_index = e.control.selected_index
+    #     if sel_index == 0:
+    #         page.add(txt_title)
+    #         page.add(lv)
+    #         page.update()
+    #
+    #     elif sel_index == 1:
+    #         if (lv in page.controls and txt_title in page.controls):
+    #             page.remove(lv)
+    #             page.remove(txt_title)
+    #             page.update()
+    #
+    #     page.update()
 
-        elif sel_index == 1:
-            if (lv in page.controls and txt_title in page.controls):
-                page.remove(lv)
-                page.remove(txt_title)
-                page.update()
-
+    def menu_sel_1(e):
         page.update()
 
-    # page.navigation_bar = ft.NavigationBar(
-    #     destinations=[
-    #         ft.NavigationRailDestination(icon=ft.icons.DATA_ARRAY,label="Data Bases",),
-    #         ft.NavigationRailDestination(icon=ft.icons.SETTINGS, label="Settings")
-    #     ],
-    #     selected_index=0,
-    #     on_change=select_option
-    # )
-
-    # rail = ft.NavigationRail(
-    #     selected_index=0,
-    #     destinations=[
-    #         ft.NavigationRailDestination(icon=ft.icons.DATA_ARRAY, label="Data Bases", ),
-    #         ft.NavigationRailDestination(icon=ft.icons.SETTINGS, label="Settings")
-    #     ],
-    #     on_change=select_option,
-    #     height=page.window_height
-    # )
 
     rail = ft.Container(
         content=ft.Column(
             controls=[
                 ft.Container(
-                    content=ft.IconButton(ft.icons.DATA_ARRAY),
+                    content=ft.IconButton(ft.icons.DATA_ARRAY, on_click=menu_sel_1),
                     animate=ft.animation.Animation(1000,'bounceOut')
                 ),
                 ft.Container(
@@ -106,6 +88,19 @@ def main(page: ft.Page):
             stopwatch_thread = threading.Thread(target=stopwatch, args=(page, error_txt, 3))
             stopwatch_thread.start()
 
+    lv = add_lv_on_page(lv, page=page)
+
+    message = ft.Row(
+            [
+                ft.Text("You haven't created any database yet", weight=ft.FontWeight.W_700, size=20,)
+            ],
+            alignment=ft.MainAxisAlignment.CENTER)
+
+    if len(lv.controls) != 0:
+        message = ft.Row(
+            [
+            ],
+            alignment=ft.MainAxisAlignment.CENTER)
 
     page.add(
             ft.Stack([
@@ -121,29 +116,26 @@ def main(page: ft.Page):
                             ],
                             alignment=ft.MainAxisAlignment.CENTER))
                     ),
+                ft.Container(
+                    margin=ft.margin.only(top=150),
+                    content=lv,
+                ),
+                ft.Container(
+                    margin=120,
+                    content= txt_title
+                ),
+                ft.Container(
+                    margin=150,
+                    content=message
+                )
                 ]
             )
         )
 
-    lv = add_lv_on_page(lv, page=page)
     DataBase.lv = lv
-    page.add(ft.Container(
-        margin=ft.margin.only(
-            top=20
-        ),
-        content=txt_title
-    ))
-
-    if len(lv.controls) == 0:
-        message = ft.Row(
-            [
-                ft.Text("You haven't created any database yet", weight=ft.FontWeight.W_700, size=20,)
-            ],
-            alignment=ft.MainAxisAlignment.CENTER)
-        page.add(message)
-        DataBaseControl.message = message
-
-    page.add(lv)
+    DataBaseControl.message = message
+    DataBase.page = page
+    DataBaseControl.page = page
 
 
 ft.app(target=main, view=ft.FLET_APP)
