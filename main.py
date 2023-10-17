@@ -14,7 +14,7 @@ def main(page: ft.Page):
         [
             ft.Text("Data Bases", text_align=ft.TextAlign.LEFT, size=20, weight=ft.FontWeight.W_900)
         ],
-        alignment=ft.MainAxisAlignment.CENTER,
+        alignment=ft.MainAxisAlignment.CENTER
     )
 
     # def select_option(e):
@@ -36,12 +36,11 @@ def main(page: ft.Page):
         page.update()
 
 
-    rail = ft.Container(
-        content=ft.Column(
+    rail = ft.Column(
             controls=[
                 ft.Container(
                     content=ft.IconButton(ft.icons.DATA_ARRAY, on_click=menu_sel_1),
-                    animate=ft.animation.Animation(1000,'bounceOut')
+                    animate=ft.animation.Animation(1000,'bounceOut'),
                 ),
                 ft.Container(
                     content=ft.IconButton(ft.icons.SETTINGS)
@@ -54,14 +53,14 @@ def main(page: ft.Page):
                 ),
                 ft.Container(
                     content=ft.IconButton(ft.icons.CLOSE),
-                    alignment=ft.alignment.bottom_left
+                    width=page.window_width,
+                    height=page.window_height,
+                    alignment=ft.alignment.bottom_left,
                 )
             ]
-        ),
-        width=page.window_width,
-        height=page.window_height,
-        margin=ft.margin.only(top=20),
-    )
+        )
+
+
 
     def search_btn(e):
         search_db(db_name=txt_field.value, lv=lv)
@@ -71,7 +70,7 @@ def main(page: ft.Page):
     def create_db(e):
         try:
             db_name = txt_field.value
-
+            print(1)
             DataBaseControl(db_name).create_DB_control()
             page.update()
         except Exception as _ex:
@@ -90,23 +89,19 @@ def main(page: ft.Page):
 
     lv = add_lv_on_page(lv, page=page)
 
-    message = ft.Row(
-            [
-                ft.Text("You haven't created any database yet", weight=ft.FontWeight.W_700, size=20,)
-            ],
-            alignment=ft.MainAxisAlignment.CENTER)
+    message = ft.Container(
+        content=ft.Row(
+            [ft.Text("You haven't created any database yet", weight=ft.FontWeight.W_700, size=20,)],
+            alignment=ft.MainAxisAlignment.CENTER),
+        margin=150,)
 
     if len(lv.controls) != 0:
-        message = ft.Row(
-            [
-            ],
-            alignment=ft.MainAxisAlignment.CENTER)
+        message = ft.Container()
 
-    page.add(
-            ft.Stack([
+    page_stack = ft.Stack([
                 rail,
                 ft.Container(
-                    margin=ft.margin.only(top=50, left=60),
+                    margin=ft.margin.only(top=50),
                     content=(
                         ft.Row(
                             [
@@ -114,28 +109,26 @@ def main(page: ft.Page):
                                 ft.IconButton(ft.icons.ADD, on_click=create_db),
                                 ft.IconButton(ft.icons.SEARCH, on_click=search_btn)
                             ],
-                            alignment=ft.MainAxisAlignment.CENTER))
+                            alignment=ft.MainAxisAlignment.CENTER)),
+
                     ),
                 ft.Container(
                     margin=ft.margin.only(top=150),
                     content=lv,
                 ),
                 ft.Container(
-                    margin=120,
-                    content= txt_title
+                    margin=ft.margin.only(top=120),
+                    content=txt_title
                 ),
-                ft.Container(
-                    margin=150,
-                    content=message
-                )
-                ]
+                message
+                ],
             )
-        )
+
+    page.add(page_stack)
 
     DataBase.lv = lv
     DataBaseControl.message = message
+    DataBaseControl.page_stack = page_stack
     DataBase.page = page
-    DataBaseControl.page = page
-
 
 ft.app(target=main, view=ft.FLET_APP)
