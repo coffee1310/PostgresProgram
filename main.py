@@ -1,22 +1,120 @@
-import threading
-import flet as ft
+import os
 from utils import *
+import signal
 
 def main(page: ft.Page):
+    page_theme = get_theme_setting()
+
     page.title = "Программа для работы с PostgreSQL"
     page.vertical_aligment = ft.MainAxisAlignment.CENTER
-    txt_field = ft.TextField(value="", text_align=ft.TextAlign.LEFT, width=400, autofocus=True)
+    page.theme_mode = page_theme
+    page.fonts = {
+        "Kadwa-Regular": "fonts/Kadwa-Regular.ttf",
+        "Kadwa-Bold": "Kadwa-Bold.ttf",
+    }
+    page.theme = ft.Theme(font_family="Kadwa-Regular")
 
-
-    lv = ft.ListView(expand=True, spacing=10)
+    txt_field = ft.TextField(value="", text_align=ft.TextAlign.LEFT, width=400, autofocus=True, label="Search and create DataBase")
+    lv = ft.ListView(expand=True, spacing=10, animate_opacity=ft.animation.Animation(100))
+    # txt_title = ft.Row(
+    #     [
+    #         ft.Stack(
+    #             [
+    #                 ft.Container(
+    #                     ft.Dropdown(
+    #                         width=100,
+    #                         height=50,
+    #                         options=[ft.dropdown.Option("A-z")],
+    #                     ),
+    #                     margin=ft.margin.only(right=300)
+    #                 ),
+    #                 ft.Container(
+    #                     ft.Text(
+    #                         "Data Bases",
+    #                         text_align=ft.TextAlign.CENTER,
+    #                         size=20,
+    #                         weight=ft.FontWeight.W_900
+    #                     ),
+    #                     margin=ft.margin.only(left=300)
+    #                 )
+    #             ]
+    #         ),
+    #     ],
+    #     alignment=ft.MainAxisAlignment.CENTER
+    # )
 
     txt_title = ft.Row(
-        [
-            ft.Text("Data Bases", text_align=ft.TextAlign.LEFT, size=20, weight=ft.FontWeight.W_900)
-        ],
-        alignment=ft.MainAxisAlignment.CENTER
+            [
+                ft.Container(
+                    ft.Text(
+                        "Data Bases",
+                        text_align=ft.TextAlign.CENTER,
+                        size=20,
+                        weight=ft.FontWeight.W_900
+                    ),
+                )
+            ],
+            alignment=ft.MainAxisAlignment.CENTER
+        )
+
+    black_theme_text = ft.Text("Black Theme")
+    white_theme_text = ft.Text("White Theme")
+
+    if page_theme == "dark":
+        black_theme_text.weight = ft.FontWeight.W_700
+    else:
+        white_theme_text.weight = ft.FontWeight.W_700
+
+    def change_white_theme(e):
+        page.theme_mode = "white"
+        white_theme_text.weight = ft.FontWeight.W_700
+        black_theme_text.weight = None
+        page.update()
+        set_theme_setting("white")
+
+    def change_black_theme(e):
+        page.theme_mode = "dark"
+        black_theme_text.weight = ft.FontWeight.W_700
+        white_theme_text.weight = None
+        page.update()
+        set_theme_setting("dark")
+
+    colors_lv = ft.ListView(expand=True, spacing=10, width=100)
+    colors_lv.controls.append(
+        ft.Container(
+            ft.Container(
+                content=black_theme_text,
+                on_hover=None,
+                height=30,
+                border_radius=10,
+                on_click=change_black_theme,
+            ),
+        )
     )
 
+    colors_lv.controls.append(
+        ft.Container(
+            content=white_theme_text,
+            width=100,
+            height=30,
+            border_radius=10,
+            bgcolor="gray",
+            on_click=change_white_theme
+        )
+    )
+
+    colors_lv = ft.Container(
+        content=colors_lv,
+        margin=ft.margin.only(50, 110),
+        offset=ft.Offset(-0.25, 0),
+        opacity=0,
+        width=0,
+        animate_size=ft.animation.Animation(100),
+        animate_offset=ft.animation.Animation(200),
+        animate_opacity=ft.animation.Animation(200)
+    )
+
+    display_color_change_bool = False
     # def select_option(e):
     #     sel_index = e.control.selected_index
     #     if sel_index == 0:
@@ -32,97 +130,95 @@ def main(page: ft.Page):
     #
     #     page.update()
 
-    def menu_sel_1(e):
+    def display_color_scheme(e):
+        nonlocal display_color_change_bool
+        if display_color_change_bool:
+            colors_lv.offset = ft.transform.Offset(-0.25, 0)
+            colors_lv.opacity = 0
+            colors_lv.width = 100
+            display_color_change_bool = False
+        else:
+            colors_lv.offset = ft.transform.Offset(0, 0)
+            colors_lv.opacity = 1
+            colors_lv.width = 100
+            display_color_change_bool = True
         page.update()
 
+    def close_app(e):
+        os.kill(os.getpid(), signal.SIGTERM)
+        page.update()
 
     rail = ft.Column(
-            controls=[
-                ft.Container(
-                    content=ft.IconButton(ft.icons.DATA_ARRAY, on_click=menu_sel_1),
-                    animate=ft.animation.Animation(1000,'bounceOut'),
-                ),
-                ft.Container(
-                    content=ft.IconButton(ft.icons.SETTINGS)
-                ),
-                ft.Container(
-                    content=ft.IconButton(ft.icons.COLOR_LENS)
-                ),
-                ft.Container(
-                    content=ft.IconButton(ft.icons.INFO)
-                ),
-                ft.Container(
-                    content=ft.IconButton(ft.icons.CLOSE),
-                    width=page.window_width,
-                    height=page.window_height,
-                    alignment=ft.alignment.bottom_left,
-                )
-            ]
-        )
-
-
+        controls=[
+            ft.Container(content=ft.IconButton(ft.icons.DATA_ARRAY)),
+            ft.Container(content=ft.IconButton(ft.icons.SETTINGS)),
+            ft.Container(content=ft.IconButton(ft.icons.COLOR_LENS, on_click=display_color_scheme)),
+            ft.Container(content=ft.IconButton(ft.icons.INFO)),
+            ft.Container(content=ft.IconButton(ft.icons.CLOSE, on_click=close_app), alignment=ft.alignment.bottom_left)
+        ]
+    )
 
     def search_btn(e):
-        search_db(db_name=txt_field.value, lv=lv)
+        search_db(db_name=txt_field.value, lv=lv, page=page)
         page.update()
-
 
     def create_db(e):
         try:
             db_name = txt_field.value
-            print(1)
-            DataBaseControl(db_name).create_DB_control()
+            DataBaseControl(str(db_name)).create_DB_control()
             page.update()
         except Exception as _ex:
-            error_txt = ft.Row(
-                [
-                    ft.Text(_ex, size=20, color="Red", width=300, weight=ft.FontWeight.W_700, text_align=ft.TextAlign.CENTER)
-                ],
-                alignment=ft.MainAxisAlignment.CENTER
-            )
-
-            page.add(error_txt)
-            page.update()
-
-            stopwatch_thread = threading.Thread(target=stopwatch, args=(page, error_txt, 3))
-            stopwatch_thread.start()
+            print(_ex)
 
     lv = add_lv_on_page(lv, page=page)
 
     message = ft.Container(
-        content=ft.Row(
-            [ft.Text("You haven't created any database yet", weight=ft.FontWeight.W_700, size=20,)],
-            alignment=ft.MainAxisAlignment.CENTER),
-        margin=150,)
+        content=ft.Row([
+            ft.Text("You haven't created any database yet", weight=ft.FontWeight.W_700, size=20)
+        ],
+        alignment=ft.MainAxisAlignment.CENTER),
+        margin=200
+    )
 
     if len(lv.controls) != 0:
         message = ft.Container()
 
-    page_stack = ft.Stack([
-                rail,
-                ft.Container(
-                    margin=ft.margin.only(top=50),
-                    content=(
-                        ft.Row(
-                            [
-                                txt_field,
-                                ft.IconButton(ft.icons.ADD, on_click=create_db),
-                                ft.IconButton(ft.icons.SEARCH, on_click=search_btn)
-                            ],
-                            alignment=ft.MainAxisAlignment.CENTER)),
+    sorting_drop_down = ft.Dropdown(
+        width=100,
+        options=[
+            ft.dropdown.Option("A-z"),
+            ft.dropdown.Option("z-A"),
+            ft.dropdown.Option("Creation\ndate")
+        ],
+        text_size=15
+    )
 
-                    ),
-                ft.Container(
-                    margin=ft.margin.only(top=150),
-                    content=lv,
-                ),
-                ft.Container(
-                    margin=ft.margin.only(top=120),
-                    content=txt_title
-                ),
-                message
+    page_stack = ft.Stack([
+        ft.Container(
+            margin=ft.margin.only(top=50),
+            content=ft.Row(
+                [
+                    sorting_drop_down,
+                    txt_field,
+                    ft.IconButton(ft.icons.ADD, on_click=create_db),
+                    ft.IconButton(ft.icons.SEARCH, on_click=search_btn)
                 ],
+                alignment=ft.MainAxisAlignment.CENTER
             )
+        ),
+        ft.Container(
+            margin=ft.margin.only(top=150),
+            content=lv
+        ),
+        ft.Container(
+            margin=ft.margin.only(top=120),
+            content=txt_title
+        ),
+        message,
+        colors_lv,
+        rail,
+
+    ])
 
     page.add(page_stack)
 

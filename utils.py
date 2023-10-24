@@ -4,10 +4,6 @@ import time
 import flet as ft
 import psycopg2
 import configparser
-import threading
-
-from flet_core import Row
-
 from config import *
 
 def stopwatch(page,elem, sec):
@@ -18,6 +14,7 @@ def stopwatch(page,elem, sec):
             remove_element(page, elem)
             break
         time.sleep(1)
+
 def remove_element(page:ft.page,elem):
     page.controls.remove(elem)
     page.update()
@@ -31,20 +28,25 @@ class DataBase():
     lv = None
     page = None
 
-    def __init__(self, db_name):
+    def __init__(self, db_name:str):
         self.db_name = db_name
 
     def connect_to_DB(self):
-        conn = psycopg2.connect(
-            user=user,
-            password=password,
-            host=host,
-        )
-        conn.autocommit = True
-
-        return conn
+        try:
+            conn = psycopg2.connect(
+                user=user,
+                password=password,
+                host=host,
+            )
+            conn.autocommit = True
+            return conn
+        except psycopg2.Error as e:
+            print(f"Error connecting to the database: {e}")
+            return None
 
     def create_DB(self):
+
+        print("db:" + self.db_name)
         conn = self.connect_to_DB()
 
         cursor = conn.cursor()
@@ -94,8 +96,6 @@ class DataBase():
 
         print("Database name has been deleted!")
 
-
-
 class DataBaseControl(DataBase, ft.UserControl):
     message = None
     page_stack = None
@@ -103,16 +103,36 @@ class DataBaseControl(DataBase, ft.UserControl):
     def __init__(self, db_name):
         ft.UserControl.__init__(self)
         self.db_name = db_name
-        self.data_base_row = ft.Row(
-            [
-                ft.Text(self.db_name, size=20, width=300),
-                ft.IconButton(ft.icons.EDIT, icon_size=20,),
-                ft.IconButton(ft.icons.DELETE, icon_size=20, on_click=self.remove_DB_control)
-            ],
-            alignment=ft.MainAxisAlignment.CENTER
+
+        self.data_base_row = ft.Container(
+            ft.Row(
+                [
+                    ft.Checkbox(),
+                    ft.Text(self.db_name, size=20, width=300),
+                    ft.IconButton(ft.icons.EDIT, icon_size=20,),
+                    ft.IconButton(ft.icons.DELETE, icon_size=20, on_click=self.remove_DB_control),
+
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            scale=ft.transform.Scale(scale=1),
+            opacity=1,
+            animate_opacity=ft.animation.Animation(100),
+            animate_scale=ft.animation.Animation(600, ft.AnimationCurve.BOUNCE_IN),
         )
 
+        self.animate_scale = ft.animation.Animation(800)
+        self.animate_opacity = ft.animation.Animation(500)
+
     def remove_DB_control(self, e=None):
+        self.scale = ft.transform.Scale(scale=0.75)
+        self.opacity = 0
+        self.page.update()
+
+        time.sleep(0.5)
+
+        self.lv.opacity = 0
+        self.page.update()
         conn = self.connect_to_DB()
 
         cursor = conn.cursor()
@@ -121,12 +141,17 @@ class DataBaseControl(DataBase, ft.UserControl):
         print("Database has been deleted!")
         conn.close()
 
-        self.remove_DB_name()
         self.lv.controls.remove(self)
+        self.lv.opacity = 1
+        self.page.update()
+        self.remove_DB_name()
         if self.page:
             self.page.update()
 
     def create_DB_control(self):
+        if self.db_name == "" or self.db_name.replace(" ", "") == "":
+            raise ValueError
+
         if self.lv and self.db_name not in get_data_base():
             self.lv.controls.insert(0, self)
             self.create_DB()
@@ -149,12 +174,33 @@ def add_lv_on_page(lv: ft.ListView, page:ft.Page):
         DataBaseControl.lv = lv
     return lv
 
-
-def search_db(db_name, lv:ft.ListView):
+def search_db(db_name, lv:ft.ListView, page:ft.Page):
     config = configparser.ConfigParser()
     config.read("db_config.ini")
-    lv.controls.clear()
-    if config.has_section(db_name):
+
+    if config.has_section(db_name) and db_name != '':
+        lv.controls.clear()
         lv.controls.append(DataBaseControl(db_name))
-    else:
-        pass
+    elif db_name == '' and len(lv.controls) == 0:
+        lv = add_lv_on_page(lv, page)
+        page.update()
+    elif db_name == '':
+        lv.clean()
+        lv = add_lv_on_page(lv, page)
+        page.update()
+
+def set_theme_setting(theme):
+    config = configparser.ConfigParser()
+    config.read("app_settings.ini")
+    config["settings"] = {
+        "theme": theme
+    }
+
+    with open("app_settings.ini", "w+") as configfile:
+        config.write(configfile)
+        configfile.flush()
+
+def get_theme_setting():
+    config = configparser.ConfigParser()
+    config.read("app_settings.ini")
+    return config["settings"]["theme"]
