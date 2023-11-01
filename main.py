@@ -4,7 +4,6 @@ import signal
 
 def main(page: ft.Page):
     page_theme = get_theme_setting()
-
     page.title = "Программа для работы с PostgreSQL"
     page.vertical_aligment = ft.MainAxisAlignment.CENTER
     page.theme_mode = page_theme
@@ -12,36 +11,11 @@ def main(page: ft.Page):
         "Kadwa-Regular": "fonts/Kadwa-Regular.ttf",
         "Kadwa-Bold": "Kadwa-Bold.ttf",
     }
+
     page.theme = ft.Theme(font_family="Kadwa-Regular")
 
     txt_field = ft.TextField(value="", text_align=ft.TextAlign.LEFT, width=400, autofocus=True, label="Search and create DataBase")
-    lv = ft.ListView(expand=True, spacing=10, animate_opacity=ft.animation.Animation(100))
-    # txt_title = ft.Row(
-    #     [
-    #         ft.Stack(
-    #             [
-    #                 ft.Container(
-    #                     ft.Dropdown(
-    #                         width=100,
-    #                         height=50,
-    #                         options=[ft.dropdown.Option("A-z")],
-    #                     ),
-    #                     margin=ft.margin.only(right=300)
-    #                 ),
-    #                 ft.Container(
-    #                     ft.Text(
-    #                         "Data Bases",
-    #                         text_align=ft.TextAlign.CENTER,
-    #                         size=20,
-    #                         weight=ft.FontWeight.W_900
-    #                     ),
-    #                     margin=ft.margin.only(left=300)
-    #                 )
-    #             ]
-    #         ),
-    #     ],
-    #     alignment=ft.MainAxisAlignment.CENTER
-    # )
+    lv = ft.ListView(expand=True, spacing=10, animate_opacity=ft.animation.Animation(200))
 
     txt_title = ft.Row(
             [
@@ -154,7 +128,7 @@ def main(page: ft.Page):
             ft.Container(content=ft.IconButton(ft.icons.SETTINGS)),
             ft.Container(content=ft.IconButton(ft.icons.COLOR_LENS, on_click=display_color_scheme)),
             ft.Container(content=ft.IconButton(ft.icons.INFO)),
-            ft.Container(content=ft.IconButton(ft.icons.CLOSE, on_click=close_app), alignment=ft.alignment.bottom_left)
+            ft.Container(content=ft.IconButton(ft.icons.CLOSE, on_click=lambda e: page.window_destroy()), alignment=ft.alignment.bottom_left)
         ]
     )
 
@@ -188,9 +162,11 @@ def main(page: ft.Page):
         options=[
             ft.dropdown.Option("A-z"),
             ft.dropdown.Option("z-A"),
-            ft.dropdown.Option("Creation\ndate")
+            ft.dropdown.Option("Creation\ndate"),
+            ft.dropdown.Option("Date\nmodified")
         ],
-        text_size=15
+        text_size=15,
+        on_change=lambda e: asyncio.run(sort_data_base(e))
     )
 
     page_stack = ft.Stack([
@@ -217,7 +193,6 @@ def main(page: ft.Page):
         message,
         colors_lv,
         rail,
-
     ])
 
     page.add(page_stack)

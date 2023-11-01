@@ -1,9 +1,10 @@
 #Python file with some functions, classes
-
+import datetime
 import time
 import flet as ft
 import psycopg2
 import configparser
+import asyncio
 from config import *
 
 def stopwatch(page,elem, sec):
@@ -25,7 +26,7 @@ def get_data_base():
     return config_.sections()
 
 class DataBase():
-    lv = None
+    __lv = None
     page = None
 
     def __init__(self, db_name:str):
@@ -55,7 +56,7 @@ class DataBase():
         print("Database has been created!")
         conn.close()
 
-        self.save_DB_name()
+        self.save_DB_setting()
         self.page.update()
 
     def remove_DB(self, e=None):
@@ -72,11 +73,13 @@ class DataBase():
     def create_table(self,):
         pass
 
-    def save_DB_name(self):
+    def save_DB_setting(self):
         config_ = configparser.ConfigParser()
         config_.read("db_config.ini")
         config_[self.db_name] = {
             "db_name" : self.db_name,
+            "created_at" : datetime.datetime.now(),
+            "modified_at" : datetime.datetime.now(),
         }
 
         with open('db_config.ini', 'w+') as configfile:
@@ -95,6 +98,14 @@ class DataBase():
             configfile.flush()
 
         print("Database name has been deleted!")
+
+    @property
+    def lv(self):
+        return self.__lv
+    @lv.setter
+    def lv(self, val):
+        self.__lv = val
+
 
 class DataBaseControl(DataBase, ft.UserControl):
     message = None
@@ -128,8 +139,6 @@ class DataBaseControl(DataBase, ft.UserControl):
         self.scale = ft.transform.Scale(scale=0.75)
         self.opacity = 0
         self.page.update()
-
-        time.sleep(0.5)
 
         self.lv.opacity = 0
         self.page.update()
@@ -204,3 +213,90 @@ def get_theme_setting():
     config = configparser.ConfigParser()
     config.read("app_settings.ini")
     return config["settings"]["theme"]
+
+
+async def sort_data_base_A_z():
+    config = configparser.ConfigParser()
+    config.read("db_config.ini")
+    sections = config.sections()
+    sections.sort()
+
+    DataBase.lv.opacity = 0
+    DataBase.page.update()
+
+    await asyncio.sleep(0.2)
+
+    DataBase.lv.clean()
+
+    for i in sections:
+        DataBase.lv.controls.append(DataBaseControl(i))
+
+    DataBase.lv.opacity = 1
+    DataBase.page.update()
+
+    return DataBase.lv
+
+async def sort_data_base_Z_A():
+    config = configparser.ConfigParser()
+    config.read("db_config.ini")
+    sections = config.sections()
+    sections.sort()
+    sections.reverse()
+
+    DataBase.lv.opacity = 0
+    DataBase.page.update()
+
+    await asyncio.sleep(0.2)
+
+    DataBase.lv.clean()
+
+    for i in sections:
+        DataBase.lv.controls.append(DataBaseControl(i))
+
+    DataBase.lv.opacity = 1
+    DataBase.page.update()
+
+    return DataBase.lv
+
+async def sort_data_base_by_date():
+    config = configparser.ConfigParser()
+    config.read("db_config.ini")
+    sections = config.sections()
+    DataBase.lv.opacity = 0
+    DataBase.page.update()
+
+    await asyncio.sleep(0.2)
+    DataBase.lv.clean()
+    db_hash_map = {}
+
+    for i in sections:
+        db_hash_map[i] = config[i]["created_at"]
+
+
+    db_hash_map = sorted(db_hash_map.items())
+    db_hash_map = dict(db_hash_map)
+
+    controls = map(lambda db_name: DataBaseControl(db_name), db_hash_map.keys())
+    DataBase.lv.controls.extend(controls)
+
+    DataBase.lv.opacity = 1
+    DataBase.page.update()
+
+    return DataBase.lv
+
+async def sort_data_bases_by_date_modifided():
+    pass
+
+async def sort_data_base(e):
+    match(e.control.value):
+        case "A-z":
+            task = asyncio.create_task(sort_data_base_A_z())
+            await task
+        case "z-A":
+            task = asyncio.create_task(sort_data_base_Z_A())
+            await task
+        case "Creation\ndate":
+            task = asyncio.create_task(sort_data_base_by_date())
+            await task
+        case "Date\nmodified":
+            pass
