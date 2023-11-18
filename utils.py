@@ -5,7 +5,9 @@ import flet as ft
 import psycopg2
 import configparser
 import asyncio
+import bcrypt
 from config import *
+from cryptography.fernet import Fernet
 
 def stopwatch(page,elem, sec):
     start_time = time.time()
@@ -24,6 +26,25 @@ def get_data_base():
     config_ = configparser.ConfigParser()
     config_.read("db_config.ini")
     return config_.sections()
+
+def hash_password(password):
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
+    return hashed_password
+
+def check_password(plain_password, hash_password):
+    return bcrypt.checkpw(plain_password.encode("utf-8", hash_password))
+
+def set_settings(e, user_name, password):
+    config_ = configparser.ConfigParser()
+    config_.read("user.ini")
+    config_["user"] = {
+        "username":user_name,
+        "password":password,
+    }
+    with open("user.ini", "w") as configfile:
+        config_.write(configfile)
+        configfile.flush()
 
 class DataBase():
     __lv = None
@@ -120,9 +141,8 @@ class DataBaseControl(DataBase, ft.UserControl):
                 [
                     ft.Checkbox(),
                     ft.Text(self.db_name, size=20, width=300),
-                    ft.IconButton(ft.icons.EDIT, icon_size=20,),
+                    ft.IconButton(ft.icons.EDIT, icon_size=20, on_click=self.page),
                     ft.IconButton(ft.icons.DELETE, icon_size=20, on_click=self.remove_DB_control),
-
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
@@ -192,11 +212,10 @@ def search_db(db_name, lv:ft.ListView, page:ft.Page):
         lv.controls.append(DataBaseControl(db_name))
     elif db_name == '' and len(lv.controls) == 0:
         lv = add_lv_on_page(lv, page)
-        page.update()
     elif db_name == '':
         lv.clean()
         lv = add_lv_on_page(lv, page)
-        page.update()
+    page.update()
 
 def set_theme_setting(theme):
     config = configparser.ConfigParser()

@@ -1,8 +1,10 @@
 import os
 from utils import *
+from views import *
 import signal
 
 def main(page: ft.Page):
+
     page_theme = get_theme_setting()
     page.title = "Программа для работы с PostgreSQL"
     page.vertical_aligment = ft.MainAxisAlignment.CENTER
@@ -11,8 +13,31 @@ def main(page: ft.Page):
         "Kadwa-Regular": "fonts/Kadwa-Regular.ttf",
         "Kadwa-Bold": "Kadwa-Bold.ttf",
     }
+    page.route = "/"
+    page.update()
 
     page.theme = ft.Theme(font_family="Kadwa-Regular")
+
+    troute = ft.TemplateRoute(page.route)
+
+    def route_changer(route):
+        page.views.clear()
+        if page.route == '/settings':
+            page.views.append(settings_view())
+        elif page.route == '/':
+            page.views.append(index_view())
+        elif page.route == '/edit':
+            page.views.append('/edit')
+        page.update()
+
+
+    def view_pop(view):
+        page.views.pop()
+        top_view = page.views[-1]
+        page.go(top_view.route)
+
+    page.on_route_change = route_changer
+    page.on_view_pop = view_pop
 
     txt_field = ft.TextField(value="", text_align=ft.TextAlign.LEFT, width=400, autofocus=True, label="Search and create DataBase")
     lv = ft.ListView(expand=True, spacing=10, animate_opacity=ft.animation.Animation(200))
@@ -118,17 +143,13 @@ def main(page: ft.Page):
             display_color_change_bool = True
         page.update()
 
-    def close_app(e):
-        os.kill(os.getpid(), signal.SIGTERM)
-        page.update()
-
     rail = ft.Column(
         controls=[
             ft.Container(content=ft.IconButton(ft.icons.DATA_ARRAY)),
-            ft.Container(content=ft.IconButton(ft.icons.SETTINGS)),
+            ft.Container(content=ft.IconButton(ft.icons.SETTINGS, on_click=lambda e: e.page.go("/settings"))),
             ft.Container(content=ft.IconButton(ft.icons.COLOR_LENS, on_click=display_color_scheme)),
             ft.Container(content=ft.IconButton(ft.icons.INFO)),
-            ft.Container(content=ft.IconButton(ft.icons.CLOSE, on_click=lambda e: page.window_destroy()), alignment=ft.alignment.bottom_left)
+            ft.Container(content=ft.IconButton(ft.icons.CLOSE, on_click=lambda e: e.page.window_destroy(), icon_color="red"))
         ]
     )
 
@@ -145,7 +166,6 @@ def main(page: ft.Page):
             print(_ex)
 
     lv = add_lv_on_page(lv, page=page)
-
     message = ft.Container(
         content=ft.Row([
             ft.Text("You haven't created any database yet", weight=ft.FontWeight.W_700, size=20)
@@ -201,5 +221,7 @@ def main(page: ft.Page):
     DataBaseControl.message = message
     DataBaseControl.page_stack = page_stack
     DataBase.page = page
+
+
 
 ft.app(target=main, view=ft.FLET_APP)
